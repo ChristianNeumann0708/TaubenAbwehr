@@ -10,7 +10,7 @@ from ultralytics import YOLO
 COOLDOWN_TIME = 15            # Sekunden warten nach dem Sprühen
 IMAGE_DIR = "erkannte_tauben" # Ordner für die Beweisfotos
 DAYS_TO_KEEP_IMAGES = 7       # Wie lange sollen Bilder gespeichert werden?
-SHOW_LIVE_PREVIEW = True      # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
+SHOW_LIVE_PREVIEW = False      # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
 
 def spritzwasser_an():
     print("💦 RELAIS AN: Pssshhhh! Taube wird nass gemacht!")
