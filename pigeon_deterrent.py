@@ -1,6 +1,8 @@
 import time
 import os
 import cv2
+import platform
+import subprocess
 from datetime import datetime, timedelta
 from ultralytics import YOLO
 
@@ -10,7 +12,10 @@ from ultralytics import YOLO
 COOLDOWN_TIME = 15            # Sekunden warten nach dem Sprühen
 IMAGE_DIR = "erkannte_tauben" # Ordner für die Beweisfotos
 DAYS_TO_KEEP_IMAGES = 7       # Wie lange sollen Bilder gespeichert werden?
-SHOW_LIVE_PREVIEW = False      # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
+SHOW_LIVE_PREVIEW = False     # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
+
+# Automatische Erkennung, ob wir auf Windows oder dem Raspberry Pi sind
+IS_WINDOWS = platform.system() == "Windows"
 
 def spritzwasser_an():
     print("💦 RELAIS AN: Pssshhhh! Taube wird nass gemacht!")
@@ -29,14 +34,18 @@ print("Lade KI-Modell (YOLOv8 Nano)...")
 # Lädt automatisch das Modell herunter beim ersten Start
 model = YOLO('yolov8n.pt') 
 
-# Kamera initialisieren (0 ist meist die Standard-Webcam am Laptop)
-cap = cv2.VideoCapture(0)
-time.sleep(2) 
+if IS_WINDOWS:
+    print("Starte Windows-Webcam...")
+    cap = cv2.VideoCapture(0)
+    time.sleep(2) 
+else:
+    print("Nutze Raspberry Pi Kamera (rpicam-jpeg)...")
+    cap = None
 
 last_spray_time = 0
 
 print("🦅 Tauben-Abwehr-System gestartet!")
-if SHOW_LIVE_PREVIEW:
+if SHOW_LIVE_PREVIEW and IS_WINDOWS:
     print("Drücke die Taste 'q' im Live-Bild-Fenster, um zu beenden.")
 else:
     print("Drücke STRG+C im Terminal zum Beenden.")
@@ -46,9 +55,22 @@ else:
 # ==========================================
 try:
     while True:
-        ret, frame = cap.read()
+        if IS_WINDOWS:
+            ret, frame = cap.read()
+        else:
+            # Auf dem Raspberry Pi nutzen wir den nativen Befehl rpicam-jpeg
+            try:
+                # -t 500 = 500ms Zeit für den Autofokus/Belichtung, --nopreview = kein Overlay
+                subprocess.run(["rpicam-jpeg", "-o", "temp_capture.jpg", "-t", "500", "--nopreview"], 
+                               check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                frame = cv2.imread("temp_capture.jpg")
+                ret = frame is not None
+            except Exception as e:
+                print(f"Fehler bei rpicam-jpeg: {e}")
+                ret = False
+
         if not ret:
-            print("Fehler beim Abrufen des Kamerabildes.")
+            print("Fehler beim Abrufen des Kamerabildes. Versuche es erneut...")
             time.sleep(2)
             continue
 
@@ -90,9 +112,8 @@ try:
                     print(f"Altes Bild gelöscht: {filename}")
 
         # Live-Vorschau anzeigen oder einfach warten
-        if SHOW_LIVE_PREVIEW:
+        if SHOW_LIVE_PREVIEW and IS_WINDOWS:
             cv2.imshow("Tauben-Abwehr Live", annotated_frame)
-            # waitKey(2000) wartet 2 Sekunden und hält das Fenster in der Zeit aktiv
             if cv2.waitKey(2000) & 0xFF == ord('q'):
                 print("\n'q' gedrückt. System wird beendet...")
                 break
@@ -102,7 +123,11 @@ try:
 except KeyboardInterrupt:
     print("\nSystem wird beendet...")
 finally:
-    cap.release()
-    if SHOW_LIVE_PREVIEW:
-        cv2.destroyAllWindows()
+    if IS_WINDOWS and cap is not None:
+        cap.release()
+        if SHOW_LIVE_PREVIEW:
+            cv2.destroyAllWindows()
+    # Temporäres Bild aufräumen
+    if not IS_WINDOWS and os.path.exists("temp_capture.jpg"):
+        os.remove("temp_capture.jpg")
     print("Kamera freigegeben.")
