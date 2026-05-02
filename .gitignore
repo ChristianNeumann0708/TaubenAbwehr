@@ -1,0 +1,16 @@
+# Python Umgebung
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+venv/
+env/
+
+# Projekt-spezifisch
+erkannte_tauben/
+yolov8n.pt
+
+# IDEs
+.vscode/
+.idea/
