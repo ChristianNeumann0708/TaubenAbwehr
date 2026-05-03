@@ -11,7 +11,7 @@ from ultralytics import YOLO
 # ==========================================
 COOLDOWN_TIME = 15            # Sekunden warten nach dem Sprühen
 IMAGE_DIR = "erkannte_tauben" # Ordner für die Beweisfotos
-DAYS_TO_KEEP_IMAGES = 7       # Wie lange sollen Bilder gespeichert werden?
+MAX_SAVED_IMAGES = 20         # Maximale Anzahl an gespeicherten Beweisfotos
 SHOW_LIVE_PREVIEW = True      # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
 
 # Automatische Erkennung, ob wir auf Windows oder dem Raspberry Pi sind
@@ -102,14 +102,21 @@ try:
             else:
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] Taube im Bild, aber Cooldown ist noch aktiv...")
         
-        # Alte Bilder aufräumen
-        now = time.time()
+        # Alte Bilder aufräumen (Maximal-Anzahl behalten)
+        saved_files = []
         for filename in os.listdir(IMAGE_DIR):
             filepath = os.path.join(IMAGE_DIR, filename)
             if os.path.isfile(filepath):
-                if os.stat(filepath).st_mtime < now - (DAYS_TO_KEEP_IMAGES * 86400):
-                    os.remove(filepath)
-                    print(f"Altes Bild gelöscht: {filename}")
+                saved_files.append(filepath)
+        
+        # Nach Speicherdatum sortieren (älteste zuerst)
+        saved_files.sort(key=os.path.getmtime)
+        
+        # Älteste Bilder löschen, bis das Limit wieder erreicht ist
+        while len(saved_files) > MAX_SAVED_IMAGES:
+            oldest_file = saved_files.pop(0)
+            os.remove(oldest_file)
+            print(f"Speicherlimit erreicht. Altes Bild gelöscht: {os.path.basename(oldest_file)}")
 
         # Live-Vorschau anzeigen oder einfach warten
         if SHOW_LIVE_PREVIEW:
