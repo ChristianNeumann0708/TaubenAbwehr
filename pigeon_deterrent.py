@@ -12,7 +12,7 @@ from ultralytics import YOLO
 COOLDOWN_TIME = 15            # Sekunden warten nach dem Sprühen
 IMAGE_DIR = "erkannte_tauben" # Ordner für die Beweisfotos
 DAYS_TO_KEEP_IMAGES = 7       # Wie lange sollen Bilder gespeichert werden?
-SHOW_LIVE_PREVIEW = False     # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
+SHOW_LIVE_PREVIEW = True      # Zeigt ein Fenster mit dem Kamera-Bild an (mit 'q' schließen)
 
 # Automatische Erkennung, ob wir auf Windows oder dem Raspberry Pi sind
 IS_WINDOWS = platform.system() == "Windows"
@@ -45,7 +45,7 @@ else:
 last_spray_time = 0
 
 print("🦅 Tauben-Abwehr-System gestartet!")
-if SHOW_LIVE_PREVIEW and IS_WINDOWS:
+if SHOW_LIVE_PREVIEW:
     print("Drücke die Taste 'q' im Live-Bild-Fenster, um zu beenden.")
 else:
     print("Drücke STRG+C im Terminal zum Beenden.")
@@ -112,7 +112,7 @@ try:
                     print(f"Altes Bild gelöscht: {filename}")
 
         # Live-Vorschau anzeigen oder einfach warten
-        if SHOW_LIVE_PREVIEW and IS_WINDOWS:
+        if SHOW_LIVE_PREVIEW:
             cv2.imshow("Tauben-Abwehr Live", annotated_frame)
             if cv2.waitKey(2000) & 0xFF == ord('q'):
                 print("\n'q' gedrückt. System wird beendet...")
@@ -125,8 +125,8 @@ except KeyboardInterrupt:
 finally:
     if IS_WINDOWS and cap is not None:
         cap.release()
-        if SHOW_LIVE_PREVIEW:
-            cv2.destroyAllWindows()
+    if SHOW_LIVE_PREVIEW:
+        cv2.destroyAllWindows()
     # Temporäres Bild aufräumen
     if not IS_WINDOWS and os.path.exists("temp_capture.jpg"):
         os.remove("temp_capture.jpg")
