@@ -60,8 +60,8 @@ try:
         else:
             # Auf dem Raspberry Pi nutzen wir den nativen Befehl rpicam-jpeg
             try:
-                # Bildauflösung auf 1024x768 begrenzen, um CPU, SD-Karte und Fenstergröße zu schonen
-                subprocess.run(["rpicam-jpeg", "-o", "temp_capture.jpg", "-t", "500", "--nopreview", "--width", "1024", "--height", "768"], 
+                # Bildauflösung auf 1280x720 (16:9) setzen, um die vollen 120 Grad Breite zu erfassen
+                subprocess.run(["rpicam-jpeg", "-o", "temp_capture.jpg", "-t", "500", "--nopreview", "--width", "1280", "--height", "720"], 
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 frame = cv2.imread("temp_capture.jpg")
                 ret = frame is not None
@@ -120,8 +120,8 @@ try:
 
         # Live-Vorschau anzeigen oder einfach warten
         if SHOW_LIVE_PREVIEW:
-            # Bild auf eine feste, angenehme Fenstergröße skalieren
-            display_frame = cv2.resize(annotated_frame, (800, 600))
+            # Bild auf eine feste, angenehme Fenstergröße im 16:9 Format skalieren
+            display_frame = cv2.resize(annotated_frame, (960, 540))
             cv2.imshow("Tauben-Abwehr Live", display_frame)
             if cv2.waitKey(2000) & 0xFF == ord('q'):
                 print("\n'q' gedrückt. System wird beendet...")
