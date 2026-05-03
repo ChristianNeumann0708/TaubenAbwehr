@@ -60,8 +60,8 @@ try:
         else:
             # Auf dem Raspberry Pi nutzen wir den nativen Befehl rpicam-jpeg
             try:
-                # -t 500 = 500ms Zeit für den Autofokus/Belichtung, --nopreview = kein Overlay
-                subprocess.run(["rpicam-jpeg", "-o", "temp_capture.jpg", "-t", "500", "--nopreview"], 
+                # Bildauflösung auf 1024x768 begrenzen, um CPU, SD-Karte und Fenstergröße zu schonen
+                subprocess.run(["rpicam-jpeg", "-o", "temp_capture.jpg", "-t", "500", "--nopreview", "--width", "1024", "--height", "768"], 
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 frame = cv2.imread("temp_capture.jpg")
                 ret = frame is not None
@@ -113,7 +113,9 @@ try:
 
         # Live-Vorschau anzeigen oder einfach warten
         if SHOW_LIVE_PREVIEW:
-            cv2.imshow("Tauben-Abwehr Live", annotated_frame)
+            # Bild auf eine feste, angenehme Fenstergröße skalieren
+            display_frame = cv2.resize(annotated_frame, (800, 600))
+            cv2.imshow("Tauben-Abwehr Live", display_frame)
             if cv2.waitKey(2000) & 0xFF == ord('q'):
                 print("\n'q' gedrückt. System wird beendet...")
                 break
